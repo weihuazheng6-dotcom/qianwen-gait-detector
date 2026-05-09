@@ -1,53 +1,77 @@
 class GaitData {
   final DateTime timestamp;
-  final String deviceName; // 新增：设备名称
   
-  // 加速度 (g)
-  final double accX, accY, accZ;
-  // 角速度 (°/s)
-  final double gyroX, gyroY, gyroZ;
-  // 角度 (°)
-  final double angleX, angleY, angleZ;
-  
-  // 标签
+  // Right Foot
+  final double? pFirstMetaR, pFifthMetaR, pHeelR;
+  final double? accXR, accYR, accZR;
+  final double? gyroXR, gyroYR, gyroZR; // Maps to ave_x/y/z_R
+  final double? rollR, pitchR, yawR;    // Maps to ang_x/y/z_R
+
+  // Left Foot
+  final double? pFirstMetaL, pFifthMetaL, pHeelL;
+  final double? accXL, accYL, accZL;
+  final double? gyroXL, gyroYL, gyroZL;
+  final double? rollL, pitchL, yawL;
+
   final String label;
 
   GaitData({
     required this.timestamp,
-    required this.deviceName,
-    required this.accX, required this.accY, required this.accZ,
-    required this.gyroX, required this.gyroY, required this.gyroZ,
-    required this.angleX, required this.angleY, required this.angleZ,
+    this.pFirstMetaR, this.pFifthMetaR, this.pHeelR,
+    this.accXR, this.accYR, this.accZR, this.gyroXR, this.gyroYR, this.gyroZR, this.rollR, this.pitchR, this.yawR,
+    this.pFirstMetaL, this.pFifthMetaL, this.pHeelL,
+    this.accXL, this.accYL, this.accZL, this.gyroXL, this.gyroYL, this.gyroZL, this.rollL, this.pitchL, this.yawL,
     this.label = '',
   });
 
-  /// 转换为 CSV 行 (匹配你提供的文本文件格式)
-  String toCsvRow() {
-    // 格式：Time,DeviceName,AccX,AccY,AccZ,GyroX,GyroY,GyroZ,AngleX,AngleY,AngleZ,Label
-    // 注意：磁场、四元数等数据当前蓝牙帧未包含，故留空或跳过
-    List<String> c = [
-      timestamp.toIso8601String(),
-      deviceName,
-      _f(accX, 3), _f(accY, 3), _f(accZ, 3),
-      _f(gyroX, 1), _f(gyroY, 1), _f(gyroZ, 1),
-      _f(angleX, 1), _f(angleY, 1), _f(angleZ, 1),
-      label
-    ];
-    return c.join(',');
+  // 格式化时间戳为 2026-05-09T10:50:15.475
+  String _formatTime(DateTime dt) {
+    final ms = dt.millisecond.toString().padLeft(3, '0');
+    return '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}T'
+           '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}:${dt.second.toString().padLeft(2, '0')}.$ms';
   }
 
-  static String _f(double v, int d) => v.toStringAsFixed(d);
+  String _fmt(double? v, int decimals) {
+    if (v == null) return ''; // 如果没数据则留空
+    return v.toStringAsFixed(decimals);
+  }
 
-  /// CSV 表头 (对应你的文本文件)
-  static const csvHeader = 
-      'Time,DeviceName,AccX,AccY,AccZ,GyroX,GyroY,GyroZ,AngleX,AngleY,AngleZ,Label';
+  String toCsvRow() {
+    return [
+      _formatTime(timestamp),
+      // Right Pressure
+      _fmt(pFirstMetaR, 1), _fmt(pFifthMetaR, 1), _fmt(pHeelR, 1),
+      // Right Acc
+      _fmt(accXR, 3), _fmt(accYR, 3), _fmt(accZR, 3),
+      // Right Gyro (ave)
+      _fmt(gyroXR, 1), _fmt(gyroYR, 1), _fmt(gyroZR, 1),
+      // Right Angle (ang)
+      _fmt(rollR, 1), _fmt(pitchR, 1), _fmt(yawR, 1),
+      // Left Pressure
+      _fmt(pFirstMetaL, 1), _fmt(pFifthMetaL, 1), _fmt(pHeelL, 1),
+      // Left Acc
+      _fmt(accXL, 3), _fmt(accYL, 3), _fmt(accZL, 3),
+      // Left Gyro (ave)
+      _fmt(gyroXL, 1), _fmt(gyroYL, 1), _fmt(gyroZL, 1),
+      // Left Angle (ang)
+      _fmt(rollL, 1), _fmt(pitchL, 1), _fmt(yawL, 1),
+      // Label
+      label
+    ].join(',');
+  }
+
+  static const String csvHeader = 
+      'timestamp,'
+      'P_first_meta_R,P_Fifth_meta_R,P_heel_R,'
+      'acc_x_R,acc_y_R,acc_z_R,'
+      'ave_x_R,ave_y_R,ave_z_R,'
+      'ang_x_R,ang_y_R,ang_z_R,'
+      'P_first_meta_L,P_Fifth_meta_L,P_heel_L,'
+      'acc_x_L,acc_y_L,acc_z_L,'
+      'ave_x_L,ave_y_L,ave_z_L,'
+      'ang_x_L,ang_y_L,ang_z_L,'
+      'Label';
 }
 
-enum SensorRole { leftPressure, rightPressure, leftIMU, rightIMU, unknown }
-enum ConnectionState { disconnected, scanning, connecting, connected, error }
-
-// 暂时保留压力数据类，虽然目前主要关注 IMU
-class PressureData {
-  final DateTime timestamp; final String deviceId; final double p1,p2,p3;
-  PressureData({required this.timestamp, required this.deviceId, required this.p1, required this.p2, required this.p3});
-}
+// 枚举保持不变
+enum SensorRole { leftPressure, rightPressure, leftIMU, rightIMU }
