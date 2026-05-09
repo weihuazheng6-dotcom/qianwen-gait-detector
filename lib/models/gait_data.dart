@@ -1,38 +1,53 @@
 class GaitData {
   final DateTime timestamp;
-  final double? pFirstMetaR, pFifthMetaR, pHeelR;
-  final double? accXR, accYR, accZR, gyroXR, gyroYR, gyroZR, rollR, pitchR, yawR;
-  final double? pFirstMetaL, pFifthMetaL, pHeelL;
-  final double? accXL, accYL, accZL, gyroXL, gyroYL, gyroZL, rollL, pitchL, yawL;
+  final String deviceName; // 新增：设备名称
+  
+  // 加速度 (g)
+  final double accX, accY, accZ;
+  // 角速度 (°/s)
+  final double gyroX, gyroY, gyroZ;
+  // 角度 (°)
+  final double angleX, angleY, angleZ;
+  
+  // 标签
   final String label;
 
-  GaitData({required this.timestamp, this.pFirstMetaR, this.pFifthMetaR, this.pHeelR,
-    this.accXR, this.accYR, this.accZR, this.gyroXR, this.gyroYR, this.gyroZR, this.rollR, this.pitchR, this.yawR,
-    this.pFirstMetaL, this.pFifthMetaL, this.pHeelL,
-    this.accXL, this.accYL, this.accZL, this.gyroXL, this.gyroYL, this.gyroZL, this.rollL, this.pitchL, this.yawL, this.label = ''});
+  GaitData({
+    required this.timestamp,
+    required this.deviceName,
+    required this.accX, required this.accY, required this.accZ,
+    required this.gyroX, required this.gyroY, required this.gyroZ,
+    required this.angleX, required this.angleY, required this.angleZ,
+    this.label = '',
+  });
 
+  /// 转换为 CSV 行 (匹配你提供的文本文件格式)
   String toCsvRow() {
-    List<String> c = [timestamp.toIso8601String(), _f(pFirstMetaR,1), _f(pFifthMetaR,1), _f(pHeelR,1),
-      _f(accXR,3), _f(accYR,3), _f(accZR,3), _f(gyroXR,1), _f(gyroYR,1), _f(gyroZR,1), _f(rollR,1), _f(pitchR,1), _f(yawR,1),
-      _f(pFirstMetaL,1), _f(pFifthMetaL,1), _f(pHeelL,1),
-      _f(accXL,3), _f(accYL,3), _f(accZL,3), _f(gyroXL,1), _f(gyroYL,1), _f(gyroZL,1), _f(rollL,1), _f(pitchL,1), _f(yawL,1), label];
+    // 格式：Time,DeviceName,AccX,AccY,AccZ,GyroX,GyroY,GyroZ,AngleX,AngleY,AngleZ,Label
+    // 注意：磁场、四元数等数据当前蓝牙帧未包含，故留空或跳过
+    List<String> c = [
+      timestamp.toIso8601String(),
+      deviceName,
+      _f(accX, 3), _f(accY, 3), _f(accZ, 3),
+      _f(gyroX, 1), _f(gyroY, 1), _f(gyroZ, 1),
+      _f(angleX, 1), _f(angleY, 1), _f(angleZ, 1),
+      label
+    ];
     return c.join(',');
   }
-  static String _f(double? v, int d) => v == null ? '' : v.toStringAsFixed(d);
-  static const csvHeader = 'timestamp,P_first_meta_R,P_Fifth_meta_R,P_heel_R,acc_x_R,acc_y_R,acc_z_R,ave_x_R,ave_y_R,ave_z_R,ang_x_R,ang_y_R,ang_z_R,P_first_meta_L,P_Fifth_meta_L,P_heel_L,acc_x_L,acc_y_L,acc_z_L,ave_x_L,ave_y_L,ave_z_L,ang_x_L,ang_y_L,ang_z_L,Label';
+
+  static String _f(double v, int d) => v.toStringAsFixed(d);
+
+  /// CSV 表头 (对应你的文本文件)
+  static const csvHeader = 
+      'Time,DeviceName,AccX,AccY,AccZ,GyroX,GyroY,GyroZ,AngleX,AngleY,AngleZ,Label';
 }
 
 enum SensorRole { leftPressure, rightPressure, leftIMU, rightIMU, unknown }
 enum ConnectionState { disconnected, scanning, connecting, connected, error }
 
+// 暂时保留压力数据类，虽然目前主要关注 IMU
 class PressureData {
   final DateTime timestamp; final String deviceId; final double p1,p2,p3;
   PressureData({required this.timestamp, required this.deviceId, required this.p1, required this.p2, required this.p3});
-}
-
-class IMUData {
-  final DateTime timestamp; final String deviceId;
-  final double accX,accY,accZ, gyroX,gyroY,gyroZ, roll,pitch,yaw;
-  IMUData({required this.timestamp, required this.deviceId, required this.accX, required this.accY, required this.accZ,
-    required this.gyroX, required this.gyroY, required this.gyroZ, required this.roll, required this.pitch, required this.yaw});
 }
